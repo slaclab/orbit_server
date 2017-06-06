@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <string>
+#include "bpm.h"
 
-int main(int argc, char *argv[]);
 /*
 class Orbit {
 public:

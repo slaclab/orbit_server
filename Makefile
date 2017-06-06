@@ -9,8 +9,11 @@ LIBS = -lca -lCom
 
 all: $(TARGET)
 
-$(TARGET): orbit.o bpm.o
-	$(CXX) $(CFLAGS) $(INCLUDES) $(LFLAGS) $(LIBS) -o $(TARGET) orbit.o bpm.o
+$(TARGET): main.o orbit.o bpm.o
+	$(CXX) $(CFLAGS) $(INCLUDES) $(LFLAGS) $(LIBS) -o $(TARGET) main.o orbit.o bpm.o
+
+main.o: main.cpp
+	$(CCX) $(CFLAGS) $(INCLUDES) -c main.cpp
 
 orbit.o: orbit.cpp orbit.h
 	$(CCX) $(CFLAGS) $(INCLUDES) -c orbit.cpp
