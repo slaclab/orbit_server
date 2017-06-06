@@ -13,6 +13,6 @@ $(TARGET): orbit.o
 	$(CXX) $(CFLAGS) $(INCLUDES) $(LFLAGS) $(LIBS) -o $(TARGET) orbit.o 
 
 orbit.o: orbit.cpp orbit.h
-	$(CCX) $(CFLAGS) $(INCLUDES) $(LFLAGS) $(LIBS) -c orbit.cpp
+	$(CCX) $(CFLAGS) $(INCLUDES) -c orbit.cpp
 clean:
 	$(RM) $(TARGET) *.o *~
