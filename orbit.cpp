@@ -6,14 +6,15 @@
 #include "orbit.h"
 
 int main (int argc, char *argv[]) {
-	if (argc < 2) {
-		fprintf(stdout, "Usage: %s PV\n", argv[0]);
+	if (argc < 3) {
+		fprintf(stdout, "Usage: %s [PV] [EDEF]\n", argv[0]);
 		return 1;
 	}
 	ca_context_create(ca_enable_preemptive_callback);
-	auto inputValue = std::string(argv[1]);
+	auto bpmName = std::string(argv[1]);
+	auto edef = std::string(argv[2]);
 	fprintf(stdout, "Connecting to BPM...");
-	auto bpm = BPM(inputValue, "1H");
+	auto bpm = BPM(bpmName, edef);
 	int counter = 0;
 	while (counter < 1000) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
