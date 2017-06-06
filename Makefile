@@ -3,8 +3,8 @@ CCX = g++
 CFLAGS = -g -Wall -std=c++11
 TARGET = orbitserver
 
-INCLUDES = -I/home/physics/mgibbs/epics/current/include -I/home/physics/mgibbs/epics/current/include/os/Linux
-LFLAGS = -L/home/physics/mgibbs/epics/current/lib/linux-x86_64
+INCLUDES = -I${EPICS_BASE}/include -I${EPICS_BASE}/include/os/Linux -I${EPICS_BASE}/include/os/Darwin
+LFLAGS = -L${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 LIBS = -lca -lCom
 
 all: $(TARGET)
