@@ -41,13 +41,13 @@ BPM::~BPM() {
 void BPM::connect() {
 	xpv.pvname = name + ":X" + edef;
 	xpv.val = &xval;
-	auto xstatus = ca_create_channel(xpv.pvname.c_str(), bpmConnectionCallback, &xpv, 0, &(xpv.chan));
+	ca_create_channel(xpv.pvname.c_str(), bpmConnectionCallback, &xpv, 0, &(xpv.chan));
 	ypv.pvname = name + ":Y" + edef;
 	ypv.val = &yval;
-	auto ystatus = ca_create_channel(ypv.pvname.c_str(), bpmConnectionCallback, &ypv, 0, &(ypv.chan));
+	ca_create_channel(ypv.pvname.c_str(), bpmConnectionCallback, &ypv, 0, &(ypv.chan));
 	tmitpv.pvname = name + ":TMIT" + edef;
 	tmitpv.val = &tmitval;
-	auto tmitstatus = ca_create_channel(tmitpv.pvname.c_str(), bpmConnectionCallback, &tmitpv, 0, &(tmitpv.chan));
+	ca_create_channel(tmitpv.pvname.c_str(), bpmConnectionCallback, &tmitpv, 0, &(tmitpv.chan));
 }
 
 void BPM::bpmConnectionCallback(connection_handler_args args) {
