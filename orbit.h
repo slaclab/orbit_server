@@ -2,26 +2,65 @@
 #define ORBIT_H
 
 #include <vector>
+#include <array>
 #include <string>
-#include "bpm.h"
+#include <thread>
+#include <fstream>
+#include <set>
+#include <map>
+#include <chrono>
+#include <epicsTypes.h>
+#include <epicsEvent.h>
+#include "pv.h"
 
-/*
-class Orbit {
-public:
-	Orbit(std::vector<std::string>& bpm_names);
-	Orbit(const Orbit&) = default;
-	Orbit& operator=(const Orbit&) = default;
-	Orbit(Orbit&&) = default;
-	Orbit& operator=(Orbit&&) = default;
-	~Orbit();
-	std::vector<std::string> names();
-	std::vector<BPM>::size_type count();
-	std::vector<BPM>::iterator bpmBegin();
-	std::vector<BPM>::iterator bpmEnd();
-	void connect();
-	bool connected();
-private:
-	std::vector<BPM> bpms;
+struct OrbitData {
+    epicsTimeStamp ts;
+    std::vector<std::array<DBRValue, 3>> values;
 };
-*/
+
+struct Receiver {
+    virtual ~Receiver() {}
+    virtual void setNames(const std::vector<std::string>& n) = 0;
+    virtual void setCompletedOrbit(const OrbitData& completed_orbit) = 0;
+};
+
+
+
+class Orbit {
+private:
+    std::vector<std::array<std::shared_ptr<PV>, 3>> pvs;
+    //CAContext& context;
+    bool run;
+    epicsMutex mutex;
+    epicsEvent wakeup;
+    std::vector<std::string> names;
+    std::thread processingThread;
+    
+    bool waiting;
+    std::set<Receiver*> receivers;
+    bool receivers_changed;
+    //size_t nComplete;
+    
+    typedef std::map<epicsUInt64, OrbitData> events_t;
+    events_t events;
+    std::set<Receiver*> receivers_shadow;
+    epicsTimeStamp now;
+    epicsUInt64 now_key, oldest_key;
+    bool hasCompleteOrbit;
+    OrbitData latestCompleteOrbit;
+    void process();
+    void process_dequeue();
+    void process_test();
+public:
+    Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::string& edef_suffix);
+    ~Orbit();
+    bool connected();
+    void wake();
+    void close();
+    bool wait_for_connection(std::chrono::seconds timeout);
+    void add_receiver(Receiver *);
+    void remove_receiver(Receiver *);
+};
+
+//Orbit orbit_from_file(std::ifstream& infile);
 #endif //ORBIT_H
