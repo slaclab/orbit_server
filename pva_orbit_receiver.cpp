@@ -22,7 +22,7 @@ orbit(orbit)
     orbitValue = pvxs::TypeDef(pvxs::TypeCode::Struct, "OrbitTable", {
         pvxs::members::StringA("labels"),
         pvxs::members::Struct("value", {
-            pvxs::members::StringA("names"),
+            pvxs::members::StringA("device_name"),
             pvxs::members::Float64A("z"),
             pvxs::members::Float64A("x_val"),
             pvxs::members::Int32A("x_severity"),
@@ -64,7 +64,7 @@ void PVAOrbitReceiver::setNames(const std::vector<std::string>& names) {
     for(size_t i=0, N=names.size(); i<N; i++) {
         ns[i] = names[i];
     }
-    orbitValue["value.names"] = ns.freeze();
+    orbitValue["value.device_name"] = ns.freeze();
 }
 
 void PVAOrbitReceiver::setZs(const std::vector<double>& zs) {
