@@ -23,22 +23,22 @@ orbit(orbit)
         pvxs::members::StringA("labels"),
         pvxs::members::Struct("value", {
             pvxs::members::StringA("names"),
-            pvxs::members::Float32A("z"),
-            pvxs::members::StructA("x", {
-                pvxs::members::Float32("value"),
-                pvxs::members::Struct("alarm", "alarm_t", alarm_t),
-                pvxs::members::Struct("timeStamp", "time_t", time_t)
-            }),
-            pvxs::members::StructA("y", {
-                pvxs::members::Float32("value"),
-                pvxs::members::Struct("alarm", "alarm_t", alarm_t),
-                pvxs::members::Struct("timeStamp", "time_t", time_t)
-            }),
-            pvxs::members::StructA("tmit", {
-                pvxs::members::Float32("value"),
-                pvxs::members::Struct("alarm", "alarm_t", alarm_t),
-                pvxs::members::Struct("timeStamp", "time_t", time_t)
-            }),
+            pvxs::members::Float64A("z"),
+            pvxs::members::Float64A("x_val"),
+            pvxs::members::Int32A("x_severity"),
+            pvxs::members::Int32A("x_status"),
+            pvxs::members::Int64A("x_ts_seconds"),
+            pvxs::members::Int32A("x_ts_nanos"),
+            pvxs::members::Float64A("y_val"),
+            pvxs::members::Int32A("y_severity"),
+            pvxs::members::Int32A("y_status"),
+            pvxs::members::Int64A("y_ts_seconds"),
+            pvxs::members::Int32A("y_ts_nanos"),
+            pvxs::members::Float64A("tmit_val"),
+            pvxs::members::Int32A("tmit_severity"),
+            pvxs::members::Int32A("tmit_status"),
+            pvxs::members::Int64A("tmit_ts_seconds"),
+            pvxs::members::Int32A("tmit_ts_nanos"),
         }),
         pvxs::members::String("descriptor"),
         pvxs::members::Struct("alarm", "alarm_t", alarm_t),
@@ -67,49 +67,106 @@ void PVAOrbitReceiver::setNames(const std::vector<std::string>& names) {
     orbitValue["value.names"] = ns.freeze();
 }
 
+void PVAOrbitReceiver::setZs(const std::vector<double>& zs) {
+    pvxs::shared_array<double> z(zs.size());
+    for(size_t i=0, N=zs.size(); i<N; i++) {
+        z[i] = zs[i];
+    }
+    orbitValue["value.z"] = z.freeze();
+}
+
 void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
     printf("Setting a completed orbit!\n");
     
-    pvxs::shared_array<pvxs::Value> xs(o.values.size());
-    pvxs::shared_array<pvxs::Value> ys(o.values.size());
-    pvxs::shared_array<pvxs::Value> tmits(o.values.size());
-    auto xfield = orbitValue["value.x"];
-    auto yfield = orbitValue["value.y"];
-    auto tmitfield = orbitValue["value.tmit"];
+    pvxs::shared_array<double> x_val(o.values.size());
+    pvxs::shared_array<int> x_severity(o.values.size());
+    pvxs::shared_array<int> x_status(o.values.size());
+    pvxs::shared_array<int64_t> x_ts_seconds(o.values.size());
+    pvxs::shared_array<int> x_ts_nanos(o.values.size());
+    pvxs::shared_array<double> y_val(o.values.size());
+    pvxs::shared_array<int> y_severity(o.values.size());
+    pvxs::shared_array<int> y_status(o.values.size());
+    pvxs::shared_array<int64_t> y_ts_seconds(o.values.size());
+    pvxs::shared_array<int> y_ts_nanos(o.values.size());
+    pvxs::shared_array<double> tmit_val(o.values.size());
+    pvxs::shared_array<int> tmit_severity(o.values.size());
+    pvxs::shared_array<int> tmit_status(o.values.size());
+    pvxs::shared_array<int64_t> tmit_ts_seconds(o.values.size());
+    pvxs::shared_array<int> tmit_ts_nanos(o.values.size());
+    
     for (size_t i=0, N=o.values.size(); i<N; i++) {
         DBRValue xval = o.values[i][0];
-        assert(xval->count == 1);
-        xs[i] = xfield.allocMember();
-        const epics::pvData::shared_vector<const double>& xval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(xval->buffer));
-        xs[i]["value"] = xval_float_buffer[0];
-        xs[i]["alarm.severity"] = xval->sevr;
-        xs[i]["alarm.status"] = xval->stat;
-        xs[i]["timeStamp.secondsPastEpoch"] = xval->ts.secPastEpoch;
-        xs[i]["timeStamp.nanoseconds"] = xval->ts.nsec;
+        if (xval.valid()) {
+            assert(xval->count == 1);
+            const epics::pvData::shared_vector<const double>& xval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(xval->buffer));
+            x_val[i] = xval_float_buffer[0];
+            x_severity[i] = xval->sevr;
+            x_status[i]= xval->stat;
+            x_ts_seconds[i] = xval->ts.secPastEpoch;
+            x_ts_nanos[i] = xval->ts.nsec;
+        } else {
+            //x_val[i] = orbitValue["value"]["x_val"].as<pvxs::shared_array<const double>>()[i];
+            x_val[i] = 0.0;
+            x_severity[i] = 3;
+        }
         
         DBRValue yval = o.values[i][1];
-        assert(yval->count == 1);
-        ys[i] = yfield.allocMember();
-        const epics::pvData::shared_vector<const double>& yval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(yval->buffer));
-        ys[i]["value"] = yval_float_buffer[0];
-        ys[i]["alarm.severity"] = yval->sevr;
-        ys[i]["alarm.status"] = yval->stat;
-        ys[i]["timeStamp.secondsPastEpoch"] = yval->ts.secPastEpoch;
-        ys[i]["timeStamp.nanoseconds"] = yval->ts.nsec;
+        if (yval.valid()) {
+            assert(yval->count == 1);
+            const epics::pvData::shared_vector<const double>& yval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(yval->buffer));
+            y_val[i] = yval_float_buffer[0];
+            y_severity[i] = yval->sevr;
+            y_status[i]= yval->stat;
+            y_ts_seconds[i] = yval->ts.secPastEpoch;
+            y_ts_nanos[i] = yval->ts.nsec;
+        } else {
+            /*
+            ys[i]["value"] = 0.0;
+            ys[i]["alarm.severity"] = 3;
+            ys[i]["alarm.status"] = 0;
+            ys[i]["timeStamp.secondsPastEpoch"] = 0;
+            ys[i]["timeStamp.nanoseconds"] = 0;
+            */
+            //y_val[i] = orbitValue["value"]["y_val"].as<pvxs::shared_array<const double>>()[i];
+            y_val[i] = 0.0;
+            y_severity[i] = 3;
+        }
+        
         
         DBRValue tmitval = o.values[i][2];
-        assert(tmitval->count == 1);
-        tmits[i] = tmitfield.allocMember();
-        const epics::pvData::shared_vector<const double>& tmitval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(tmitval->buffer));
-        tmits[i]["value"] = tmitval_float_buffer[0];
-        tmits[i]["alarm.severity"] = tmitval->sevr;
-        tmits[i]["alarm.status"] = tmitval->stat;
-        tmits[i]["timeStamp.secondsPastEpoch"] = tmitval->ts.secPastEpoch;
-        tmits[i]["timeStamp.nanoseconds"] = tmitval->ts.nsec;
+        if (tmitval.valid()) {
+            assert(tmitval->count == 1);
+            const epics::pvData::shared_vector<const double>& tmitval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(tmitval->buffer));
+            tmit_val[i] = tmitval_float_buffer[0];
+            tmit_severity[i] = yval->sevr;
+            tmit_status[i]= yval->stat;
+            tmit_ts_seconds[i] = yval->ts.secPastEpoch;
+            tmit_ts_nanos[i] = yval->ts.nsec;
+        } else {
+            //tmit_val[i] = orbitValue["value"]["tmit_val"].as<pvxs::shared_array<const double>>()[i];
+            tmit_val[i] = 0.0;
+            tmit_severity[i] = 3;
+        }
+        
     }
-    orbitValue["value.x"] = xs.freeze();
-    orbitValue["value.y"] = ys.freeze();
-    orbitValue["value.tmit"] = tmits.freeze();
+    orbitValue["value.x_val"] = x_val.freeze();
+    orbitValue["value.x_severity"] = x_severity.freeze();
+    orbitValue["value.x_status"] = x_status.freeze();
+    orbitValue["value.x_ts_seconds"] = x_ts_seconds.freeze();
+    orbitValue["value.x_ts_nanos"] = x_ts_nanos.freeze();
+    
+    orbitValue["value.y_val"] = y_val.freeze();
+    orbitValue["value.y_severity"] = y_severity.freeze();
+    orbitValue["value.y_status"] = y_status.freeze();
+    orbitValue["value.y_ts_seconds"] = y_ts_seconds.freeze();
+    orbitValue["value.y_ts_nanos"] = y_ts_nanos.freeze();
+    
+    orbitValue["value.tmit_val"] = tmit_val.freeze();
+    orbitValue["value.tmit_severity"] = tmit_severity.freeze();
+    orbitValue["value.tmit_status"] = tmit_status.freeze();
+    orbitValue["value.tmit_ts_seconds"] = tmit_ts_seconds.freeze();
+    orbitValue["value.tmit_ts_nanos"] = tmit_ts_nanos.freeze();
+    
     orbitValue["timeStamp.secondsPastEpoch"] = o.ts.secPastEpoch;
     orbitValue["timeStamp.nanoseconds"] = o.ts.nsec;
     auto newOrbitValue = orbitValue.clone();

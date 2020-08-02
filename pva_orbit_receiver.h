@@ -21,9 +21,11 @@ struct PVAOrbitReceiver : public Receiver
     pvxs::Value orbitValue;
     void close();
     virtual void setNames(const std::vector<std::string>& n);
+    virtual void setZs(const std::vector<double>& zs);
     virtual void setCompletedOrbit(const OrbitData& o);
 private:
     pvxs::shared_array<std::string> _names;
+    pvxs::shared_array<double> _zs;
     OrbitData publishedOrbit;
 };
 

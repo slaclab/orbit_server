@@ -21,6 +21,7 @@ struct OrbitData {
 struct Receiver {
     virtual ~Receiver() {}
     virtual void setNames(const std::vector<std::string>& n) = 0;
+    virtual void setZs(const std::vector<double>& zs) = 0;
     virtual void setCompletedOrbit(const OrbitData& completed_orbit) = 0;
 };
 
@@ -34,6 +35,7 @@ private:
     epicsMutex mutex;
     epicsEvent wakeup;
     std::vector<std::string> names;
+    std::vector<double> zs;
     std::thread processingThread;
     
     bool waiting;
@@ -52,7 +54,7 @@ private:
     void process_dequeue();
     void process_test();
 public:
-    Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::string& edef_suffix);
+    Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::vector<double>& z_vals, const std::string& edef_suffix);
     ~Orbit();
     bool connected();
     void wake();

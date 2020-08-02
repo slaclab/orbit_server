@@ -15,10 +15,11 @@ static double maxEventAge = 2.5;
 // holdoff after delivering events (in milliseconds)
 int flushPeriod = 100;
 
-Orbit::Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::string& edef_suffix) : 
+Orbit::Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::vector<double>& z_vals, const std::string& edef_suffix) : 
 //context(context),
 run(true),
 names(bpm_names),
+zs(z_vals),
 waiting(false),
 oldest_key(0u),
 hasCompleteOrbit(false)
@@ -114,16 +115,20 @@ bool Orbit::connected() {
 
 void Orbit::add_receiver(Receiver* recv) {
     std::vector<std::string> recv_names;
+    std::vector<double> recv_zs;
     {
         Guard G(mutex);
         receivers.insert(recv);
         receivers_changed = true;
         recv_names.reserve(names.size());
+        recv_zs.reserve(zs.size());
         for (size_t i=0, N=names.size(); i<N; i++) {
             recv_names.push_back(names[i]);
+            recv_zs.push_back(zs[i]);
         }
     }
     recv->setNames(recv_names);
+    recv->setZs(recv_zs);
 }
 
 void Orbit::remove_receiver(Receiver* recv) {
