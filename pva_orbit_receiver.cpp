@@ -76,8 +76,8 @@ void PVAOrbitReceiver::setZs(const std::vector<double>& zs) {
 }
 
 void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
-    printf("Setting a completed orbit!\n");
-    
+    //printf("Setting a completed orbit!\n");
+    Guard G(mutex);
     pvxs::shared_array<double> x_val(o.values.size());
     pvxs::shared_array<int> x_severity(o.values.size());
     pvxs::shared_array<int> x_status(o.values.size());
@@ -138,10 +138,10 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             assert(tmitval->count == 1);
             const epics::pvData::shared_vector<const double>& tmitval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(tmitval->buffer));
             tmit_val[i] = tmitval_float_buffer[0];
-            tmit_severity[i] = yval->sevr;
-            tmit_status[i]= yval->stat;
-            tmit_ts_seconds[i] = yval->ts.secPastEpoch;
-            tmit_ts_nanos[i] = yval->ts.nsec;
+            tmit_severity[i] = tmitval->sevr;
+            tmit_status[i]= tmitval->stat;
+            tmit_ts_seconds[i] = tmitval->ts.secPastEpoch;
+            tmit_ts_nanos[i] = tmitval->ts.nsec;
         } else {
             //tmit_val[i] = orbitValue["value"]["tmit_val"].as<pvxs::shared_array<const double>>()[i];
             tmit_val[i] = 0.0;
@@ -170,11 +170,15 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
     orbitValue["timeStamp.secondsPastEpoch"] = o.ts.secPastEpoch;
     orbitValue["timeStamp.nanoseconds"] = o.ts.nsec;
     auto newOrbitValue = orbitValue.clone();
-    if (!pv->isOpen()) {
-        pv->open(std::move(newOrbitValue));
-    } else {
-        pv->post(std::move(newOrbitValue));
+    {
+        //UnGuard U(G);
+        if (!pv->isOpen()) {
+            pv->open(std::move(newOrbitValue));
+        } else {
+            pv->post(std::move(newOrbitValue));
+        }
     }
+    
     orbitValue.unmark(); //Set all fields to unchanged in preparation for the next update.
     
 }
