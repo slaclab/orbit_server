@@ -1,4 +1,5 @@
 #include "pv.h"
+#include "orbit.h"
 #include <db_access.h>
 #include <stdexcept>
 #include <epicsThread.h>
@@ -34,13 +35,16 @@ void onError(exception_handler_args args)
                  args.pFile, args.lineNo, args.ctx);
 }
 
+size_t DBRValue::Holder::num_instances;
+
 DBRValue::Holder::Holder() : sevr(4), stat(LINK_ALARM), count(1u) {
+    REFTRACE_INCREMENT(num_instances);
     ts.secPastEpoch = 0;
     ts.nsec = 0;
 }
 
 DBRValue::Holder::~Holder() {
-    
+    REFTRACE_DECREMENT(num_instances);
 }
 
 size_t CAContext::num_instances;
@@ -134,15 +138,19 @@ CAContext::Attach::~Attach()
     }
 }
 
-PV::PV(const std::string& pvname, const CAContext& context, size_t limit) : 
+size_t PV::num_instances;
+
+PV::PV(const std::string& pvname, const CAContext& context, size_t limit, Orbit& orbit) : 
     pvname(pvname),
     context(context),
+    orbit(orbit),
     connected(false),
     ready(false),
     limit(limit),
     chan(0),
     ev(0)
 {
+    REFTRACE_INCREMENT(num_instances);
     last_event.secPastEpoch = 0;
     last_event.nsec = 0;
     if(!context.context){
@@ -157,6 +165,7 @@ PV::PV(const std::string& pvname, const CAContext& context, size_t limit) :
 PV::~PV() {
     printf("Clearing PV: %s\n", pvname.c_str());
     close();
+    REFTRACE_DECREMENT(num_instances);
 }
 
 void PV::close() {
@@ -243,7 +252,7 @@ void PV::connectionCallback(connection_handler_args args) {
             }
             if(notify) {
                 self->ready = true;
-                //self->collector.wake();
+                self->orbit.wake();
             }
             eca_error::check(err);
         }
@@ -253,7 +262,7 @@ void PV::connectionCallback(connection_handler_args args) {
 }
 
 void PV::monitorCallback(event_handler_args args) {
-	PV *self = static_cast<PV*>(args.usr);
+    PV *self = static_cast<PV*>(args.usr);
     try {
         if(!dbr_type_is_TIME(args.type)) {
             throw std::runtime_error("CA server doesn't honor DBR_TIME_*");
@@ -296,6 +305,7 @@ void PV::monitorCallback(event_handler_args args) {
         val->ts = meta.stamp;
         val->count = count;
         val->buffer = pvd::freeze(buf);
+        assert(val->buffer.data() != nullptr);
         bool notify = false;
         {
             Guard G(self->mutex);
@@ -307,7 +317,7 @@ void PV::monitorCallback(event_handler_args args) {
         }
         if(notify) {
             self->ready = true;
-            //self->collector.
+            self->orbit.wake();
         }
     } catch(std::exception& err) {
         printf("Unexpected exception in PV::monitorCallback() for %s: %s\n", ca_name(args.chid), err.what());

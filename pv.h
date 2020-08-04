@@ -13,6 +13,7 @@
 typedef epicsGuard<epicsMutex> Guard;
 typedef epicsGuardRelease<epicsMutex> UnGuard;
 
+class Orbit;
 
 struct CAContext {
     static size_t num_instances;
@@ -34,6 +35,7 @@ struct CAContext {
 
 struct DBRValue {
     struct Holder {
+        static size_t num_instances;
         epicsTimeStamp ts;
         epicsUInt16 sevr;
         epicsUInt16 stat;
@@ -60,10 +62,12 @@ public:
 
 struct PV {
 public:
-    PV(const std::string& pvname, const CAContext& context, size_t limit);
+    PV(const std::string& pvname, const CAContext& context, size_t limit, Orbit& orbit);
     ~PV();
+    static size_t num_instances;
     const std::string pvname;
     const CAContext& context;
+    Orbit& orbit;
     bool connected;
     bool ready;
     mutable epicsMutex mutex;

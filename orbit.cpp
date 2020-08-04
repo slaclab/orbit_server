@@ -13,7 +13,7 @@ static double maxEventRate = 20;
 // timeout to flush partial events
 static double maxEventAge = 2.5;
 // holdoff after delivering events (in milliseconds)
-int flushPeriod = 100;
+int flushPeriod = 50;
 
 Orbit::Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::vector<double>& z_vals, const std::string& edef_suffix) : 
 //context(context),
@@ -29,7 +29,7 @@ hasCompleteOrbit(false)
     pvs.resize(bpm_names.size());
     for(size_t i=0, N=bpm_names.size(); i<N; i++) {
         for (size_t j=0; j<3; j++) {
-            pvs[i][j].reset(new PV(bpm_names[i] + ":" + axes[j] + edef_suffix, context, 10u));
+            pvs[i][j].reset(new PV(bpm_names[i] + ":" + axes[j] + edef_suffix, context, 10u, *this));
         }
     }
     
@@ -99,6 +99,7 @@ void Orbit::close() {
 
 void Orbit::wake() {
     if (waiting) {
+        //printf("Waking up!");
         wakeup.signal();
     }
 }
@@ -157,16 +158,16 @@ void Orbit::process() {
         {
             UnGuard U(G);
             if(hasCompleteOrbit) {
-                printf("Huzzah! A complete orbit!\n");
+                //printf("Huzzah! A complete orbit!\n");
                 for (std::set<Receiver*>::iterator it(receivers_shadow.begin()), end(receivers_shadow.end()); it != end; ++it) {
                     (*it)->setCompletedOrbit(latestCompleteOrbit);
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(flushPeriod));
             }
             if (willwait) {
-                printf("Waiting 1000ms.\n");
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                //wakeup.wait();
+                //printf("Going to sleep.\n");
+                //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                wakeup.wait();
             }
             epicsTimeGetCurrent(&now);
         }
@@ -261,7 +262,7 @@ void Orbit::process_test() {
             }
         }
     }
-    if(true) {
+    if(false) {
         if(first_partial==events.begin() || events.empty()) {
             printf("## No events complete\n");
         } else {
