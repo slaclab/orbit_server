@@ -18,13 +18,7 @@ int main (int argc, char *argv[]) {
         fprintf(stdout, "Usage: %s [MODEL_PV] [EDEF]\n", argv[0]);
         return 1;
     }
-    //auto filename = std::string(argv[1]);
-    printf("About to start.\n");
     std::vector<std::string> bpm_names;
-    //std::ifstream input_file(argv[1]);
-    //for(std::string line; std::getline(input_file, line);) {
-    //    bpm_names.emplace_back(line);
-    //}
     auto model_pv = std::string(argv[1]);
     auto edef = std::string(argv[2]);
     
@@ -48,16 +42,11 @@ int main (int argc, char *argv[]) {
     std::shared_ptr<CAContext> context;
     context.reset(new CAContext(epicsThreadPriorityMedium));
     auto orbit = new Orbit(*context, bpm_names, bpm_z_vals, edef);
+    printf("Orbit initialized.\n");
     auto receiver = new PVAOrbitReceiver(*orbit);
-    auto connected = orbit->wait_for_connection(std::chrono::seconds(3));
+    printf("Receiver initialized.\n");
     auto server = pvxs::server::Config::from_env().build().addPV("ORBIT:TABLE", *(receiver->pv));
-
-    if (!connected) {
-        printf("Connection timeout exceeded.\n");
-        return 1;
-    }
     printf("Done connecting. Spinning up PVA server.\n");
     server.run();
-    //ca_context_destroy();
     return 0;
 }
