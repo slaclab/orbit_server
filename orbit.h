@@ -16,6 +16,7 @@
 struct OrbitData {
     epicsTimeStamp ts;
     std::vector<std::array<DBRValue, 3>> values;
+    bool complete;
 };
 
 struct Receiver {
@@ -24,8 +25,6 @@ struct Receiver {
     virtual void setZs(const std::vector<double>& zs) = 0;
     virtual void setCompletedOrbit(const OrbitData& completed_orbit) = 0;
 };
-
-
 
 class Orbit {
 private:
@@ -64,5 +63,4 @@ public:
     void remove_receiver(Receiver *);
 };
 
-//Orbit orbit_from_file(std::ifstream& infile);
 #endif //ORBIT_H

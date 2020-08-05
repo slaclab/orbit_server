@@ -11,9 +11,9 @@
 // limit on number of potentially complete events to track
 static double maxEventRate = 20;
 // timeout to flush partial events
-static double maxEventAge = 2.5;
-// holdoff after delivering events (in milliseconds)
-int flushPeriod = 50;
+static double maxEventAge = 1.0;
+// holdoff after delivering events (in milliseconds).  16 ms is about 30 Hz.
+int flushPeriod = 16;
 
 Orbit::Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::vector<double>& z_vals, const std::string& edef_suffix) : 
 //context(context),
@@ -35,53 +35,7 @@ hasCompleteOrbit(false)
     
     processingThread = std::thread(&Orbit::process, this);   
 }
-/*
-Orbit::Orbit(std::ifstream& infile, std::string& edef_suffix) {
-	printf("Making orbit from file...\n");
-	std::string line;
-	std::getline(infile, line);
-	printf("%s", line.c_str());
-	for(std::string line2; std::getline(infile, line2);) {
-		printf("%s", line2.c_str());
-		bpms.emplace_back(line2, edef_suffix);
-	}
-}
-*/
-/*
-Orbit::Orbit(const Orbit& o) : num_bpms {o.num_bpms}, bpms {new BPM[o.num_bpms]} {
-	for (unsigned int i = 0; i < num_bpms; ++i) {
-		bpms[i] = o.bpms[i];
-	}
-}
 
-Orbit& Orbit::operator=(const Orbit& o) {
-	BPM* b = new BPM[o.num_bpms];
-	for (unsigned int i = 0; i < o.num_bpms; ++i) {
-		b[i] = o.bpms[i];
-	}
-	delete[] bpms;
-	bpms = b;
-	num_bpms = o.num_bpms;
-	return *this;
-}
-
-Orbit::Orbit(Orbit&& o) {
-	bpms = o.bpms;
-	num_bpms = o.num_bpms;
-	o.bpms = nullptr;
-	o.num_bpms = 0;
-}
-
-Orbit& Orbit::operator=(Orbit&& o) {
-	if (this != &o) {
-		bpms = o.bpms;
-		num_bpms = o.num_bpms;
-		o.bpms = nullptr;
-		o.num_bpms = 0;
-	}
-	return *this;
-}
-*/
 Orbit::~Orbit() {
     close();
 }
@@ -155,22 +109,22 @@ void Orbit::process() {
         }
         
         bool willwait = waiting;
-        {
-            UnGuard U(G);
-            if(hasCompleteOrbit) {
-                //printf("Huzzah! A complete orbit!\n");
+        if(hasCompleteOrbit) {
+            //printf("Huzzah! A complete orbit!\n");
+            {
+                UnGuard U(G);
                 for (std::set<Receiver*>::iterator it(receivers_shadow.begin()), end(receivers_shadow.end()); it != end; ++it) {
                     (*it)->setCompletedOrbit(latestCompleteOrbit);
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(flushPeriod));
             }
-            if (willwait) {
-                //printf("Going to sleep.\n");
-                //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                wakeup.wait();
-            }
-            epicsTimeGetCurrent(&now);
+            hasCompleteOrbit = false;
         }
+        if (willwait) {
+            printf("%u - Nothing to do.  Sleeping!\n", now.secPastEpoch);
+            wakeup.wait();
+        }
+        epicsTimeGetCurrent(&now);
     }
 }
 
@@ -200,13 +154,12 @@ void Orbit::process_dequeue() {
                 //printf("%s is valid and ready! %llu.\n", pv->pvname.c_str(), key);
                 if (!pv->connected || key > oldest_key) {
                     events_t::mapped_type& incompleteOrbit = events[key]; //This implicitly allocates new incompleteOrbits
+                    incompleteOrbit.complete = false;
                     incompleteOrbit.ts = val->ts;
                     incompleteOrbit.values.resize(pvs.size());
                     if(!incompleteOrbit.values[i][j].valid()) {
                         incompleteOrbit.values[i][j].swap(val);
                     }
-                } else if (pv->connected) {
-                    
                 }
             }
         }
@@ -229,16 +182,25 @@ void Orbit::process_dequeue() {
 }
 
 void Orbit::process_test() {
+    //printf("BEGIN process_test()\n\n");
     epicsUInt64 max_age = maxEventAge;
     max_age <<= 32;
     max_age |= epicsUInt32(1000000000u * fmod(maxEventAge, 1.0));
     events_t::iterator first_partial(events.end());
     size_t i = events.size();
     {
+        //printf("Starting completion checks.\n");
         events_t::reverse_iterator it(events.rbegin()), end(events.rend());
+        /* Note for a C++ noob: rbegin points to the "largest" key, which is
+        the newest event (largest timestamp), in our case.  So we're iterating 
+        from newest to oldest here. */
         for(; it!=end; ++it, i--) {
+            //printf("Checking event: %u, %u...", it->second.ts.secPastEpoch, it->second.ts.nsec);
             epicsInt64 key_age = epicsInt64(now_key) - epicsInt64(it->first);
             if(key_age >= epicsInt64(max_age)) {
+                //This event, and all others after it, are older than max_age.
+                //Don't even bother checking for completion.
+                //printf("\n Older than max_age!  Stopping completion checks.\n\n");
                 break;
             }
             const events_t::mapped_type& orbit = it->second;
@@ -246,19 +208,31 @@ void Orbit::process_test() {
             for (size_t j=0, N=pvs.size(); complete && j<N; j++) {
                 for (size_t k=0; k<3; k++) {
                     complete = !(pvs[j][k]->connected) || orbit.values[j][k].valid();
+                    /*
                     if(!complete) {
                         printf("## test slice %llx found incomplete %s %sconn %svalid\n",
                                      it->first, pvs[j][k]->pvname.c_str(),
                                      !pvs[j][k]->connected?"dis":"",
                                      orbit.values[j][k].valid()?"":"in");
                     }
+                    */
                 }
             }
+            it->second.complete = complete;
             if (!complete) {
-                first_partial = --it.base();
-                //printf("it->first was %llu, but first_partial->first was %llu", it->first, first_partial->first);
-                assert(it->first == first_partial->first);
-                break;
+                //printf("incomplete.\n");
+            } else {
+                //printf("complete!\n");
+                if (!hasCompleteOrbit) {
+                    if (it->first > oldest_key) {
+                        //printf("Setting latestCompleteEvent: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
+                        latestCompleteOrbit = it->second;
+                        hasCompleteOrbit = true;
+                        oldest_key = it->first;
+                    } else {
+                        //printf("Newly complete orbit that was older than the latest published: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
+                    }   
+                }
             }
         }
     }
@@ -269,24 +243,27 @@ void Orbit::process_test() {
             printf("## %zu events complete out of %zu events total\n", events.size()-i, events.size());
         }
     }
-    events_t::iterator it(events.begin()), end(first_partial);
-    //This next step is kind of goofy, it does a lot more than it needs to.
-    // Really we just want to send the latest complete orbit (which should be the one before first_partial)
-    // and dump the rest.
+    events_t::iterator it(events.begin()), end(events.end());
     while (it != end) {
-        events_t::iterator cur = it++;
-        if (cur->first <= oldest_key) {
-            printf("cur->first is %llu, but oldest_key is %llu\n", cur->first, oldest_key);
+        epicsInt64 key_age = epicsInt64(now_key) - epicsInt64(it->first);
+        if (it->second.complete) {
+            //printf("Erasing non-fresh complete orbit: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
+            it = events.erase(it);
+        } else if (key_age >= epicsInt64(max_age)) {
+            //This event, and all others after it, are older than max_age.
+            //Don't even bother checking for completion.
+            //printf("Erasing orbit older than max_age: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
+            it = events.erase(it);
+        } else {
+            ++it;
         }
-        assert(cur->first > oldest_key);
-        oldest_key = cur->first;
-        latestCompleteOrbit = cur->second;
-        hasCompleteOrbit = true;
-        events.erase(cur);
+        
     }
     while (events.size() > 4) {
+        //printf("Erasing old incomplete orbit: %u, %u\n", events.begin()->second.ts.secPastEpoch, events.begin()->second.ts.nsec);
         events.erase(events.begin());
     }
+    //printf("END process_test()\n\n");
 }
 
 bool Orbit::wait_for_connection(std::chrono::seconds timeout) {
