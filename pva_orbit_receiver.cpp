@@ -105,7 +105,6 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             x_ts_seconds[i] = xval->ts.secPastEpoch;
             x_ts_nanos[i] = xval->ts.nsec;
         } else {
-            //x_val[i] = orbitValue["value"]["x_val"].as<pvxs::shared_array<const double>>()[i];
             x_val[i] = 0.0;
             x_severity[i] = 3;
         }
@@ -120,18 +119,9 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             y_ts_seconds[i] = yval->ts.secPastEpoch;
             y_ts_nanos[i] = yval->ts.nsec;
         } else {
-            /*
-            ys[i]["value"] = 0.0;
-            ys[i]["alarm.severity"] = 3;
-            ys[i]["alarm.status"] = 0;
-            ys[i]["timeStamp.secondsPastEpoch"] = 0;
-            ys[i]["timeStamp.nanoseconds"] = 0;
-            */
-            //y_val[i] = orbitValue["value"]["y_val"].as<pvxs::shared_array<const double>>()[i];
             y_val[i] = 0.0;
             y_severity[i] = 3;
         }
-        
         
         DBRValue tmitval = o.values[i][2];
         if (tmitval.valid()) {
@@ -143,7 +133,6 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             tmit_ts_seconds[i] = tmitval->ts.secPastEpoch;
             tmit_ts_nanos[i] = tmitval->ts.nsec;
         } else {
-            //tmit_val[i] = orbitValue["value"]["tmit_val"].as<pvxs::shared_array<const double>>()[i];
             tmit_val[i] = 0.0;
             tmit_severity[i] = 3;
         }
