@@ -310,7 +310,7 @@ void PV::monitorCallback(event_handler_args args) {
         {
             Guard G(self->mutex);
             if(epicsTimeDiffInSeconds(&meta.stamp, &self->last_event) > 0) {
-                notify = self->values.empty();
+                notify = true;
                 self->push(val);
             }
             self->last_event = meta.stamp;
