@@ -15,12 +15,13 @@
 
 int main (int argc, char *argv[]) {
     if (argc < 3) {
-        fprintf(stdout, "Usage: %s [MODEL_PV] [EDEF]\n", argv[0]);
+        fprintf(stdout, "Usage: %s [MODEL_PV] [EDEF] [OUTPUT_PV]\n", argv[0]);
         return 1;
     }
     std::vector<std::string> bpm_names;
     auto model_pv = std::string(argv[1]);
     auto edef = std::string(argv[2]);
+    auto output_pv = std::string(argv[3]);
     
     //Now, get all the BPM Z values from the model.
     pvxs::client::Context pva_ctxt = pvxs::client::Config::from_env().build();
@@ -37,7 +38,6 @@ int main (int argc, char *argv[]) {
         }
     }
     assert(bpm_z_vals.size() == bpm_names.size());
-    
     fprintf(stdout, "Connecting to BPMs...\n");
     std::shared_ptr<CAContext> context;
     context.reset(new CAContext(epicsThreadPriorityMedium));
@@ -45,7 +45,7 @@ int main (int argc, char *argv[]) {
     printf("Orbit initialized.\n");
     auto receiver = new PVAOrbitReceiver(*orbit);
     printf("Receiver initialized.\n");
-    auto server = pvxs::server::Config::from_env().build().addPV("ORBIT:TABLE", *(receiver->pv));
+    auto server = pvxs::server::Config::from_env().build().addPV(output_pv, *(receiver->pv));
     printf("Done connecting. Spinning up PVA server.\n");
     server.run();
     return 0;
