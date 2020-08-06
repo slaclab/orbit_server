@@ -26,6 +26,7 @@ struct PVAOrbitReceiver : public Receiver
 private:
     pvxs::shared_array<std::string> _names;
     pvxs::shared_array<double> _zs;
+    bool initialized;
     OrbitData publishedOrbit;
 };
 
