@@ -121,7 +121,7 @@ void Orbit::process() {
             hasCompleteOrbit = false;
         }
         if (willwait) {
-            printf("%u - Nothing to do.  Sleeping!\n", now.secPastEpoch);
+            //printf("%u - Nothing to do.  Sleeping!\n", now.secPastEpoch);
             wakeup.wait();
         }
         epicsTimeGetCurrent(&now);
