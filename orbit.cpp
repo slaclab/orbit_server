@@ -243,26 +243,32 @@ void Orbit::process_test() {
             printf("## %zu events complete out of %zu events total\n", events.size()-i, events.size());
         }
     }
+    
     events_t::iterator it(events.begin()), end(events.end());
     while (it != end) {
         epicsInt64 key_age = epicsInt64(now_key) - epicsInt64(it->first);
         if (it->second.complete) {
             //printf("Erasing non-fresh complete orbit: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
             it = events.erase(it);
-        } else if (key_age >= epicsInt64(max_age)) {
-            //This event, and all others after it, are older than max_age.
-            //Don't even bother checking for completion.
-            //printf("Erasing orbit older than max_age: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
+        } else if (it->first <= oldest_key) {
             it = events.erase(it);
+        } else if ((key_age >= epicsInt64(max_age)) && !hasCompleteOrbit) {
+            //printf("Erasing orbit older than max_age: %u, %u\n", it->second.ts.secPastEpoch, it->second.ts.nsec);
+            latestCompleteOrbit = it->second;
+            hasCompleteOrbit = true;
+            oldest_key = it->first;
         } else {
             ++it;
         }
         
     }
+    //printf("Done with process_test.  Number of incomplete events remaining: %lu\n", events.size());
+    /*
     while (events.size() > 4) {
         //printf("Erasing old incomplete orbit: %u, %u\n", events.begin()->second.ts.secPastEpoch, events.begin()->second.ts.nsec);
         events.erase(events.begin());
     }
+    */
     //printf("END process_test()\n\n");
 }
 
