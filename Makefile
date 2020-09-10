@@ -3,9 +3,9 @@ CCX = g++
 CFLAGS = -g -Wall -std=c++11 -pthread
 TARGET = orbitserver
 
-INCLUDES = -I${EPICS_BASE}/include -I${EPICS_BASE}/include/os/Linux -I${EPICS_BASE}/include/os/Darwin -I${EPICS_BASE}/include/compiler/clang -I${EPICS_BASE}/include/compiler/gcc -I${EPICS_BASE}/../pvxs/bundle/usr/${EPICS_HOST_ARCH}/include -I${EPICS_BASE}/../pvxs/include
-LFLAGS = -L${EPICS_BASE}/lib/${EPICS_HOST_ARCH} -L${EPICS_BASE}/../pvxs/lib/${EPICS_HOST_ARCH} -L${EPICS_BASE}/../pvxs/bundle/usr/${EPICS_HOST_ARCH}/lib
-LIBS = -lca -lCom -lpvxs -lpvData
+INCLUDES = -I${EPICS_BASE}/include -I${EPICS_BASE}/include/os/Linux -I${EPICS_BASE}/include/os/Darwin -I${EPICS_BASE}/include/compiler/clang -I${EPICS_BASE}/include/compiler/gcc -I./pvxs/bundle/usr/${EPICS_HOST_ARCH}/include -I./pvxs/include
+LFLAGS = -L${EPICS_BASE}/lib/${EPICS_HOST_ARCH} -L./pvxs/lib/${EPICS_HOST_ARCH} -L./pvxs/bundle/usr/${EPICS_HOST_ARCH}/lib
+LIBS = -lca -lCom -lpvxs -lpvData -levent
 
 all: $(TARGET)
 
