@@ -26,20 +26,20 @@ initialized(false)
             pvxs::members::StringA("device_name"),
             pvxs::members::Float64A("z"),
             pvxs::members::Float64A("x_val"),
-            pvxs::members::Int32A("x_severity"),
-            pvxs::members::Int32A("x_status"),
-            pvxs::members::Int64A("x_ts_seconds"),
-            pvxs::members::Int32A("x_ts_nanos"),
+            pvxs::members::UInt16A("x_severity"),
+            pvxs::members::UInt16A("x_status"),
+            pvxs::members::UInt32A("x_ts_seconds"),
+            pvxs::members::UInt32A("x_ts_nanos"),
             pvxs::members::Float64A("y_val"),
-            pvxs::members::Int32A("y_severity"),
-            pvxs::members::Int32A("y_status"),
-            pvxs::members::Int64A("y_ts_seconds"),
-            pvxs::members::Int32A("y_ts_nanos"),
+            pvxs::members::UInt16A("y_severity"),
+            pvxs::members::UInt16A("y_status"),
+            pvxs::members::UInt32A("y_ts_seconds"),
+            pvxs::members::UInt32A("y_ts_nanos"),
             pvxs::members::Float64A("tmit_val"),
-            pvxs::members::Int32A("tmit_severity"),
-            pvxs::members::Int32A("tmit_status"),
-            pvxs::members::Int64A("tmit_ts_seconds"),
-            pvxs::members::Int32A("tmit_ts_nanos"),
+            pvxs::members::UInt16A("tmit_severity"),
+            pvxs::members::UInt16A("tmit_status"),
+            pvxs::members::UInt32A("tmit_ts_seconds"),
+            pvxs::members::UInt32A("tmit_ts_nanos"),
         }),
         pvxs::members::String("descriptor"),
         pvxs::members::Struct("alarm", "alarm_t", alarm_t),
@@ -80,20 +80,20 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
     //printf("Setting a completed orbit!\n");
     Guard G(mutex);
     pvxs::shared_array<double> x_val(o.values.size());
-    pvxs::shared_array<int> x_severity(o.values.size());
-    pvxs::shared_array<int> x_status(o.values.size());
-    pvxs::shared_array<int64_t> x_ts_seconds(o.values.size());
-    pvxs::shared_array<int> x_ts_nanos(o.values.size());
+    pvxs::shared_array<uint16_t> x_severity(o.values.size());
+    pvxs::shared_array<uint16_t> x_status(o.values.size());
+    pvxs::shared_array<uint32_t> x_ts_seconds(o.values.size());
+    pvxs::shared_array<uint32_t> x_ts_nanos(o.values.size());
     pvxs::shared_array<double> y_val(o.values.size());
-    pvxs::shared_array<int> y_severity(o.values.size());
-    pvxs::shared_array<int> y_status(o.values.size());
-    pvxs::shared_array<int64_t> y_ts_seconds(o.values.size());
-    pvxs::shared_array<int> y_ts_nanos(o.values.size());
+    pvxs::shared_array<uint16_t> y_severity(o.values.size());
+    pvxs::shared_array<uint16_t> y_status(o.values.size());
+    pvxs::shared_array<uint32_t> y_ts_seconds(o.values.size());
+    pvxs::shared_array<uint32_t> y_ts_nanos(o.values.size());
     pvxs::shared_array<double> tmit_val(o.values.size());
-    pvxs::shared_array<int> tmit_severity(o.values.size());
-    pvxs::shared_array<int> tmit_status(o.values.size());
-    pvxs::shared_array<int64_t> tmit_ts_seconds(o.values.size());
-    pvxs::shared_array<int> tmit_ts_nanos(o.values.size());
+    pvxs::shared_array<uint16_t> tmit_severity(o.values.size());
+    pvxs::shared_array<uint16_t> tmit_status(o.values.size());
+    pvxs::shared_array<uint32_t> tmit_ts_seconds(o.values.size());
+    pvxs::shared_array<uint32_t> tmit_ts_nanos(o.values.size());
     pvxs::shared_array<const double> last_xval(o.values.size());
     pvxs::shared_array<const double> last_yval(o.values.size());
     pvxs::shared_array<const double> last_tmitval(o.values.size());
