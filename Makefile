@@ -10,7 +10,7 @@ LIBS = -lca -lCom -lpvxs -lpvData -levent
 all: $(TARGET)
 
 $(TARGET): main.o pva_orbit_receiver.o orbit.o pv.o
-	$(CXX) $(CFLAGS) $(INCLUDES) $(LFLAGS) $(LIBS) -o $(TARGET) main.o pva_orbit_receiver.o orbit.o pv.o
+	$(CXX) $(CFLAGS) $(INCLUDES) $(LFLAGS) -o $(TARGET) main.o pva_orbit_receiver.o orbit.o pv.o $(LIBS)
 
 main.o: main.cpp
 	$(CCX) $(CFLAGS) $(INCLUDES) -c main.cpp
