@@ -10,7 +10,7 @@ initialized(false)
 {
     pv = std::make_shared<pvxs::server::SharedPV>(pvxs::server::SharedPV::buildReadonly());
     auto time_t = {
-        pvxs::members::Int64("secondsPastEpoch"),
+        pvxs::members::Int32("secondsPastEpoch"),
         pvxs::members::Int32("nanoseconds"),
         pvxs::members::Int32("userTag"),
     };
