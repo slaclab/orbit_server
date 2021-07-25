@@ -48,7 +48,9 @@ initialized(false)
     pvxs::shared_array<std::string> labels({"device_name", "z", "x_val", "x_severity", "x_status", "x_ts_seconds", "x_ts_nanos", "y_val", "y_severity", "y_status", "y_ts_seconds", "y_ts_nanos", "tmit_val", "tmit_severity", "tmit_status", "tmit_ts_seconds", "tmit_ts_nanos"});
     orbitValue["labels"] = labels.freeze();
     orbitValue["descriptor"] = "LCLS Orbit Data";
+    printf("Adding PVAOrbitReceiver to orbit.\n");
     orbit.add_receiver(this);
+    printf("Leaving PVAOrbitReceiver initializer.\n");
 }
 
 PVAOrbitReceiver::~PVAOrbitReceiver() {
@@ -77,7 +79,6 @@ void PVAOrbitReceiver::setZs(const std::vector<double>& zs) {
 }
 
 void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
-    //printf("Setting a completed orbit!\n");
     Guard G(mutex);
     pvxs::shared_array<double> x_val(o.values.size());
     pvxs::shared_array<uint16_t> x_severity(o.values.size());
@@ -102,10 +103,9 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
         last_yval = orbitValue["value"]["y_val"].as<pvxs::shared_array<const double>>();
         last_tmitval = orbitValue["value"]["tmit_val"].as<pvxs::shared_array<const double>>();
     }
-    
     for (size_t i=0, N=o.values.size(); i<N; i++) {
         DBRValue xval = o.values[i][0];
-        if (xval.valid()) {
+        if (xval.valid() && xval->sevr != 4) {
             assert(xval->count == 1);
             const epics::pvData::shared_vector<const double>& xval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(xval->buffer));
             x_val[i] = xval_float_buffer[0];
@@ -115,11 +115,11 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             x_ts_nanos[i] = xval->ts.nsec;
         } else {
             x_val[i] = last_xval.at(i);
-            x_severity[i] = 3;
+            x_severity[i] = 4;
         }
         
         DBRValue yval = o.values[i][1];
-        if (yval.valid()) {
+        if (yval.valid() && yval->sevr != 4) {
             assert(yval->count == 1);
             const epics::pvData::shared_vector<const double>& yval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(yval->buffer));
             y_val[i] = yval_float_buffer[0];
@@ -129,11 +129,11 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             y_ts_nanos[i] = yval->ts.nsec;
         } else {
             y_val[i] = last_yval.at(i);
-            y_severity[i] = 3;
+            y_severity[i] = 4;
         }
         
         DBRValue tmitval = o.values[i][2];
-        if (tmitval.valid()) {
+        if (tmitval.valid() && tmitval->sevr != 4) {
             assert(tmitval->count == 1);
             const epics::pvData::shared_vector<const double>& tmitval_float_buffer(epics::pvData::static_shared_vector_cast<const double>(tmitval->buffer));
             tmit_val[i] = tmitval_float_buffer[0];
@@ -143,7 +143,7 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             tmit_ts_nanos[i] = tmitval->ts.nsec;
         } else {
             tmit_val[i] = last_tmitval.at(i);
-            tmit_severity[i] = 3;
+            tmit_severity[i] = 4;
         }
         
     }
