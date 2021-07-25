@@ -5,6 +5,7 @@
 #include <array>
 #include <string>
 #include <thread>
+#include <mutex>
 #include <fstream>
 #include <set>
 #include <map>
@@ -29,9 +30,8 @@ struct Receiver {
 class Orbit {
 private:
     std::vector<std::array<std::shared_ptr<PV>, 3>> pvs;
-    //CAContext& context;
     bool run;
-    epicsMutex mutex;
+    std::mutex mutex;
     epicsEvent wakeup;
     std::vector<std::string> names;
     std::vector<double> zs;
@@ -40,7 +40,6 @@ private:
     bool waiting;
     std::set<Receiver*> receivers;
     bool receivers_changed;
-    //size_t nComplete;
     
     typedef std::map<epicsUInt64, OrbitData> events_t;
     events_t events;
@@ -49,9 +48,10 @@ private:
     epicsUInt64 now_key, oldest_key;
     bool hasCompleteOrbit;
     OrbitData latestCompleteOrbit;
+    std::vector<OrbitData> completed;
     void process();
-    void process_dequeue();
-    void process_test();
+    void dequeue_pv_data();
+    void check_for_complete();
 public:
     Orbit(CAContext& context, const std::vector<std::string>& bpm_names, const std::vector<double>& z_vals, const std::string& edef_suffix);
     ~Orbit();
