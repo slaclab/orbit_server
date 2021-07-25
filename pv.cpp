@@ -251,7 +251,7 @@ void PV::connectionCallback(connection_handler_args args) {
                 self->push(val);
             }
             if(notify) {
-                self->ready = true;
+                //self->ready = true;
                 self->orbit.wake();
             }
             eca_error::check(err);
@@ -310,13 +310,13 @@ void PV::monitorCallback(event_handler_args args) {
         {
             Guard G(self->mutex);
             if(epicsTimeDiffInSeconds(&meta.stamp, &self->last_event) > 0) {
-                notify = true;
+                notify = self->values.empty();
                 self->push(val);
             }
             self->last_event = meta.stamp;
         }
         if(notify) {
-            self->ready = true;
+            //self->ready = true;
             self->orbit.wake();
         }
     } catch(std::exception& err) {
