@@ -25,6 +25,7 @@ int main (int argc, char *argv[]) {
     auto output_pv = std::string(argv[3]);
     
     //Now, get all the BPM Z values from the model.
+    
     pvxs::client::Context pva_ctxt = pvxs::client::Config::from_env().build();
     auto model_table = pva_ctxt.get(model_pv).exec()->wait(4.0).clone();
     pvxs::shared_array<const void> name_col = model_table["value"]["device_name"].as<pvxs::shared_array<const void>>();
@@ -38,6 +39,18 @@ int main (int argc, char *argv[]) {
             bpm_z_vals.push_back(z_vals[i]);
         }
     }
+    //Hacky Manual Mode for use with fakeorbit ioc
+    /*
+    std::ostringstream nameStream;
+    std::vector<double> bpm_z_vals;
+    for (size_t i=0, N = 101; i<N; i++) {
+        nameStream.str("");
+        nameStream << "BPMS:LTUH:" << i;
+        printf("%s\n", nameStream.str().c_str());
+        bpm_names.push_back(nameStream.str());
+        bpm_z_vals.push_back(float(i));
+    }
+    */
     assert(bpm_z_vals.size() == bpm_names.size());
     fprintf(stdout, "Connecting to BPMs...\n");
     std::shared_ptr<CAContext> context;
