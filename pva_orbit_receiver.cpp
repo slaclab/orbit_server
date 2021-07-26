@@ -28,18 +28,12 @@ initialized(false)
             pvxs::members::Float64A("x_val"),
             pvxs::members::UInt16A("x_severity"),
             pvxs::members::UInt16A("x_status"),
-            pvxs::members::UInt32A("x_ts_seconds"),
-            pvxs::members::UInt32A("x_ts_nanos"),
             pvxs::members::Float64A("y_val"),
             pvxs::members::UInt16A("y_severity"),
             pvxs::members::UInt16A("y_status"),
-            pvxs::members::UInt32A("y_ts_seconds"),
-            pvxs::members::UInt32A("y_ts_nanos"),
             pvxs::members::Float64A("tmit_val"),
             pvxs::members::UInt16A("tmit_severity"),
             pvxs::members::UInt16A("tmit_status"),
-            pvxs::members::UInt32A("tmit_ts_seconds"),
-            pvxs::members::UInt32A("tmit_ts_nanos"),
         }),
         pvxs::members::String("descriptor"),
         pvxs::members::Struct("alarm", "alarm_t", alarm_t),
@@ -83,18 +77,12 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
     pvxs::shared_array<double> x_val(o.values.size());
     pvxs::shared_array<uint16_t> x_severity(o.values.size());
     pvxs::shared_array<uint16_t> x_status(o.values.size());
-    pvxs::shared_array<uint32_t> x_ts_seconds(o.values.size());
-    pvxs::shared_array<uint32_t> x_ts_nanos(o.values.size());
     pvxs::shared_array<double> y_val(o.values.size());
     pvxs::shared_array<uint16_t> y_severity(o.values.size());
     pvxs::shared_array<uint16_t> y_status(o.values.size());
-    pvxs::shared_array<uint32_t> y_ts_seconds(o.values.size());
-    pvxs::shared_array<uint32_t> y_ts_nanos(o.values.size());
     pvxs::shared_array<double> tmit_val(o.values.size());
     pvxs::shared_array<uint16_t> tmit_severity(o.values.size());
     pvxs::shared_array<uint16_t> tmit_status(o.values.size());
-    pvxs::shared_array<uint32_t> tmit_ts_seconds(o.values.size());
-    pvxs::shared_array<uint32_t> tmit_ts_nanos(o.values.size());
     pvxs::shared_array<const double> last_xval(o.values.size());
     pvxs::shared_array<const double> last_yval(o.values.size());
     pvxs::shared_array<const double> last_tmitval(o.values.size());
@@ -111,8 +99,6 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             x_val[i] = xval_float_buffer[0];
             x_severity[i] = xval->sevr;
             x_status[i]= xval->stat;
-            x_ts_seconds[i] = xval->ts.secPastEpoch;
-            x_ts_nanos[i] = xval->ts.nsec;
         } else {
             x_val[i] = last_xval.at(i);
             x_severity[i] = 4;
@@ -125,8 +111,6 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             y_val[i] = yval_float_buffer[0];
             y_severity[i] = yval->sevr;
             y_status[i]= yval->stat;
-            y_ts_seconds[i] = yval->ts.secPastEpoch;
-            y_ts_nanos[i] = yval->ts.nsec;
         } else {
             y_val[i] = last_yval.at(i);
             y_severity[i] = 4;
@@ -139,8 +123,6 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
             tmit_val[i] = tmitval_float_buffer[0];
             tmit_severity[i] = tmitval->sevr;
             tmit_status[i]= tmitval->stat;
-            tmit_ts_seconds[i] = tmitval->ts.secPastEpoch;
-            tmit_ts_nanos[i] = tmitval->ts.nsec;
         } else {
             tmit_val[i] = last_tmitval.at(i);
             tmit_severity[i] = 4;
@@ -148,28 +130,32 @@ void PVAOrbitReceiver::setCompletedOrbit(const OrbitData& o) {
         
     }
     orbitValue["value.x_val"] = x_val.freeze();
+    orbitValue["value.x_val"].mark();
     orbitValue["value.x_severity"] = x_severity.freeze();
+    orbitValue["value.x_severity"].mark();
     orbitValue["value.x_status"] = x_status.freeze();
-    orbitValue["value.x_ts_seconds"] = x_ts_seconds.freeze();
-    orbitValue["value.x_ts_nanos"] = x_ts_nanos.freeze();
+    orbitValue["value.x_status"].mark();
     
     orbitValue["value.y_val"] = y_val.freeze();
+    orbitValue["value.y_val"].mark();
     orbitValue["value.y_severity"] = y_severity.freeze();
+    orbitValue["value.y_severity"].mark();
     orbitValue["value.y_status"] = y_status.freeze();
-    orbitValue["value.y_ts_seconds"] = y_ts_seconds.freeze();
-    orbitValue["value.y_ts_nanos"] = y_ts_nanos.freeze();
+    orbitValue["value.y_status"].mark();
     
     orbitValue["value.tmit_val"] = tmit_val.freeze();
+    orbitValue["value.tmit_val"].mark();
     orbitValue["value.tmit_severity"] = tmit_severity.freeze();
+    orbitValue["value.tmit_severity"].mark();
     orbitValue["value.tmit_status"] = tmit_status.freeze();
-    orbitValue["value.tmit_ts_seconds"] = tmit_ts_seconds.freeze();
-    orbitValue["value.tmit_ts_nanos"] = tmit_ts_nanos.freeze();
+    orbitValue["value.tmit_status"].mark();
     
     orbitValue["timeStamp.secondsPastEpoch"] = o.ts.secPastEpoch;
+    orbitValue["timeStamp.secondsPastEpoch"].mark();
     orbitValue["timeStamp.nanoseconds"] = o.ts.nsec;
+    orbitValue["timeStamp.nanoseconds"].mark();
     auto newOrbitValue = orbitValue.clone();
     {
-        //UnGuard U(G);
         if (!pv->isOpen()) {
             pv->open(std::move(newOrbitValue));
         } else {
